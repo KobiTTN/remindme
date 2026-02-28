@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}RemindMe — Мої нагадування{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- ── Форма нового нагадування ──────────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="card p-4">
+      <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Нове нагадування</h5>
+      <form action="/reminders" method="post">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Текст нагадування</label>
+          <textarea name="text" class="form-control" rows="3" placeholder="Наприклад: Зателефонувати Марині" required maxlength="500"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Дата та час</label>
+          <input type="datetime-local" name="remind_at" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-bell me-1"></i> Створити нагадування
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Список нагадувань ─────────────────────────────────────────────── -->
+  <div class="col-lg-8">
+
+    <!-- Майбутні нагадування -->
+    <h5 class="fw-bold mb-3"><i class="bi bi-clock me-2 text-primary"></i>Заплановані ({{ upcoming|length }})</h5>
+
+    {% if upcoming %}
+      {% for r in upcoming %}
+      <div class="card reminder-card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="mb-1 fw-semibold">{{ r.text }}</p>
+            <span class="small text-muted">
+              <i class="bi bi-calendar3 me-1"></i>
+              {{ r.remind_at.strftime('%d.%m.%Y о %H:%M') }}
+            </span>
+          </div>
+          <!-- Видалити нагадування -->
+          <form action="/reminders/{{ r.id }}/delete" method="post" class="ms-3">
+            <button type="submit" class="btn btn-outline-danger btn-sm"
+                    onclick="return confirm('Видалити це нагадування?')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="card p-4 text-center text-muted">
+        <i class="bi bi-bell-slash mb-2" style="font-size:2rem;"></i>
+        <p class="mb-0">Немає запланованих нагадувань</p>
+      </div>
+    {% endif %}
+
+    <!-- Історія (відправлені) -->
+    {% if history %}
+    <h5 class="fw-bold mt-4 mb-3"><i class="bi bi-check2-circle me-2 text-success"></i>Історія ({{ history|length }})</h5>
+    {% for r in history %}
+    <div class="card reminder-card sent p-3 mb-2">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <p class="mb-1">{{ r.text }}</p>
+          <span class="small text-muted">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ r.remind_at.strftime('%d.%m.%Y о %H:%M') }}
+          </span>
+        </div>
+        <span class="badge badge-sent ms-2">Відправлено</span>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Встановлюємо мінімальну дату = зараз
+  const dt = document.querySelector('input[type="datetime-local"]');
+  if (dt) {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    dt.min = now.toISOString().slice(0, 16);
+  }
+</script>
+{% endblock %}
