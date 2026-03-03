@@ -50,15 +50,20 @@ async def check_and_send_reminders():
             Reminder.is_sent == False
         ).all()
 
+        logger.info(f"Scheduler tick: now={now.strftime('%H:%M:%S')} UTC, due={len(due)}")
+
         for reminder in due:
             user = db.query(User).filter(User.id == reminder.user_id).first()
             if user:
                 text = f"⏰ Нагадування:\n\n{reminder.text}"
+                logger.info(f"Sending reminder {reminder.id} to telegram_id={user.telegram_id}")
                 ok = await send_message(user.telegram_id, text)
                 if ok:
                     reminder.is_sent = True
                     db.commit()
                     logger.info(f"Sent reminder {reminder.id} to user {user.telegram_id}")
+                else:
+                    logger.error(f"Failed to send reminder {reminder.id} to {user.telegram_id}")
     except Exception as e:
         logger.error(f"Scheduler error: {e}")
     finally:

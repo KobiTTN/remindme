@@ -67,6 +67,8 @@ async def send_message(chat_id: int, text: str) -> bool:
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.post(url, json={"chat_id": chat_id, "text": text}, timeout=10)
+            if resp.status_code != 200:
+                logger.error(f"Telegram API error {resp.status_code}: {resp.text}")
             return resp.status_code == 200
         except Exception as e:
             logger.error(f"Failed to send message to {chat_id}: {e}")
