@@ -15,7 +15,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label small fw-semibold">Дата та час</label>
-          <input type="datetime-local" name="remind_at" class="form-control" required>
+          <input type="datetime-local" name="remind_at" id="remind_at_input" class="form-control" required>
         </div>
         <button type="submit" class="btn btn-primary w-100">
           <i class="bi bi-bell me-1"></i> Створити нагадування
@@ -38,7 +38,9 @@
             <p class="mb-1 fw-semibold">{{ r.text }}</p>
             <span class="small text-muted">
               <i class="bi bi-calendar3 me-1"></i>
-              {{ r.remind_at.strftime('%d.%m.%Y о %H:%M') }}
+              <span class="local-time" data-utc="{{ r.remind_at.strftime('%Y-%m-%dT%H:%M') }}Z">
+                {{ r.remind_at.strftime('%d.%m.%Y о %H:%M') }} UTC
+              </span>
             </span>
           </div>
           <!-- Видалити нагадування -->
@@ -68,7 +70,9 @@
           <p class="mb-1">{{ r.text }}</p>
           <span class="small text-muted">
             <i class="bi bi-calendar3 me-1"></i>
-            {{ r.remind_at.strftime('%d.%m.%Y о %H:%M') }}
+            <span class="local-time" data-utc="{{ r.remind_at.strftime('%Y-%m-%dT%H:%M') }}Z">
+              {{ r.remind_at.strftime('%d.%m.%Y о %H:%M') }} UTC
+            </span>
           </span>
         </div>
         <span class="badge badge-sent ms-2">Відправлено</span>
@@ -83,12 +87,35 @@
 
 {% block scripts %}
 <script>
-  // Встановлюємо мінімальну дату = зараз
+  // Мінімальна дата = зараз (у локальному часі)
   const dt = document.querySelector('input[type="datetime-local"]');
   if (dt) {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     dt.min = now.toISOString().slice(0, 16);
   }
+
+  // Конвертуємо локальний час → UTC перед відправкою форми
+  const reminderForm = document.querySelector('form[action="/reminders"]');
+  if (reminderForm) {
+    reminderForm.addEventListener('submit', function () {
+      const input = document.getElementById('remind_at_input');
+      if (input && input.value) {
+        const localDate = new Date(input.value);
+        input.value = localDate.toISOString().slice(0, 16);
+      }
+    });
+  }
+
+  // Відображаємо UTC дати у локальному часі
+  document.querySelectorAll('.local-time').forEach(function (el) {
+    const utc = el.getAttribute('data-utc');
+    if (utc) {
+      const d = new Date(utc);
+      const pad = n => String(n).padStart(2, '0');
+      el.textContent = pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear()
+        + ' о ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+  });
 </script>
 {% endblock %}
